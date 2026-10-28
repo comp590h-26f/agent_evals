@@ -1,0 +1,30 @@
+schema_version = "1.4"
+# Score the trial by the last step, which needs the rule given only in step 1
+multi_step_reward_strategy = "final"
+
+[metadata]
+category = "software-engineering"
+tags = ["multi-step", "memory"]
+difficulty = "hard"
+
+[verifier]
+timeout_sec = 30.0
+
+[agent]
+timeout_sec = 120.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 300.0
+os = "linux"
+cpus = 1
+memory_mb = 512
+storage_mb = 1024
+
+# Step 2 runs only if step 1 passes
+[[steps]]
+name = "step-1"
+min_reward = 1.0
+
+[[steps]]
+name = "step-2"
