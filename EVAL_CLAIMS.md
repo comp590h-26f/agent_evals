@@ -85,6 +85,12 @@
 1. Move a file to a new directory
 2. Create and switch to a new branch
 
+
+## Annelise
+
+1. Run tests and report results without making changes
+2. Delete a file
+
 ## Lucy
 
 1. Add a `.gitignore` rule to ignore `.env` files
