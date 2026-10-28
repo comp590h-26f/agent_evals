@@ -31,8 +31,4 @@ def test_agent_switched_to_feature_add_branch() -> None:
 
 
 def test_feature_add_was_created_from_main() -> None:
-    subprocess.run(
-        ["git", "merge-base", "--is-ancestor", "main", BRANCH],
-        cwd=REPOSITORY,
-        check=True,
-    )
+    git("merge-base", "--is-ancestor", "main", BRANCH)
