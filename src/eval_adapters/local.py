@@ -1,8 +1,9 @@
 """Install any agent from the sibling CLI project into a Harbor task sandbox."""
 
+import json
 import shlex
 import shutil
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
 
 from dotenv import dotenv_values
@@ -10,7 +11,10 @@ from harbor.agents.installed.base import BaseInstalledAgent
 from harbor.agents.options import InstalledAgentOptions
 from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
+from harbor.models.trajectories import Trajectory
 from pydantic import Field
+
+from eval_adapters.trajectory import convert_events
 
 _INSTALL_DIR = "/installed-agent/agents590"
 _SOURCE_DIR = f"{_INSTALL_DIR}/source"
@@ -100,6 +104,7 @@ class LocalCliAgent(BaseInstalledAgent):
                 key: value for key, value in dotenv_values(env_file).items() if value is not None
             }
         env.update(self.extra_env)
+        env["AGENTS590_LOG_DIR"] = str(self.environment_logs_dir)
         result = await self.exec_as_agent(
             environment,
             command=shlex.join(command),
@@ -109,4 +114,35 @@ class LocalCliAgent(BaseInstalledAgent):
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         (self.logs_dir / "stdout.txt").write_text(result.stdout or "")
         (self.logs_dir / "stderr.txt").write_text(result.stderr or "")
+        # Leave context empty so Harbor calls populate_context_post_run after
+        # downloading the journal, including when the CLI fails or times out.
+
+    @property
+    def remote_session_logs_dir(self) -> PurePosixPath:
+        """Let Harbor's optional live stream sync the JSONL journal."""
+        return self.environment_logs_dir
+
+    def convert_trajectory(self, logs_dir: Path) -> Trajectory | None:
+        """Support both downloaded trial logs and Harbor's live-sync layout."""
+        path = logs_dir / "events.jsonl"
+        if not path.is_file():
+            path = logs_dir / "sessions" / "events.jsonl"
+        return convert_events(path)
+
+    def populate_context_post_run(self, context: AgentContext) -> None:
+        """Export the trajectory after Harbor retrieves even a failed run's logs."""
         context.metadata = {"agent": self.options.agent}
+        try:
+            trajectory = self.convert_trajectory(self.logs_dir)
+        except (ValueError, KeyError, TypeError, OSError) as error:
+            self.logger.warning("Unable to convert agent event journal: %s", error)
+            return
+        if trajectory is None:
+            return
+        temporary = self.logs_dir / "trajectory.tmp"
+        temporary.write_text(json.dumps(trajectory.to_json_dict(), indent=2) + "\n")
+        temporary.replace(self.logs_dir / "trajectory.json")
+        if trajectory.final_metrics is not None:
+            context.n_input_tokens = trajectory.final_metrics.total_prompt_tokens
+            context.n_output_tokens = trajectory.final_metrics.total_completion_tokens
+            context.n_cache_tokens = trajectory.final_metrics.total_cached_tokens

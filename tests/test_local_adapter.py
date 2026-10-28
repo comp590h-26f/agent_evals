@@ -111,7 +111,11 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
     ) -> ExecResult:
         seen.append(shlex.split(command))
         assert "explicit-override" not in command
-        assert env == {"EXAMPLE_API_KEY": "explicit-override", "OTHER_SETTING": "preserved"}
+        assert env == {
+            "EXAMPLE_API_KEY": "explicit-override",
+            "OTHER_SETTING": "preserved",
+            "AGENTS590_LOG_DIR": "/logs/agent",
+        }
         assert cwd == "/app"
         return ExecResult(return_code=0, stdout="agent result\n", stderr="")
 
@@ -131,6 +135,8 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
         ]
     ]
     assert (agent.logs_dir / "stdout.txt").read_text() == "agent result\n"
+    assert context.is_empty()
+    agent.populate_context_post_run(context)
     assert context.metadata == {"agent": "another-agent"}
 
 
