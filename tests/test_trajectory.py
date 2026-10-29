@@ -139,6 +139,40 @@ def test_live_sync_layout(journal: Path) -> None:
     assert agent.convert_trajectory(journal.parent) is not None
 
 
+@pytest.mark.parametrize("keep_journal", [False, True])
+def test_post_run_preserves_native_atif_and_reported_cost(
+    journal: Path, keep_journal: bool
+) -> None:
+    trajectory = convert_events(journal)
+    assert trajectory is not None and trajectory.final_metrics is not None
+    trajectory.final_metrics.total_prompt_tokens = 999
+    trajectory.final_metrics.total_cost_usd = 0.25
+    path = journal.parent / "trajectory.json"
+    original = json.dumps(trajectory.to_json_dict())
+    path.write_text(original)
+    if not keep_journal:
+        journal.unlink()
+    agent = LocalCliAgent(logs_dir=journal.parent, agent="lukeb23")
+    context = AgentContext()
+    agent.populate_context_post_run(context)
+    assert path.read_text() == original
+    assert context.n_input_tokens == 999
+    assert context.n_output_tokens == 30
+    assert context.n_cache_tokens == 150
+    assert context.cost_usd == 0.25
+
+
+def test_post_run_recovers_invalid_native_atif_from_journal(journal: Path) -> None:
+    path = journal.parent / "trajectory.json"
+    path.write_text("{incomplete")
+    agent = LocalCliAgent(logs_dir=journal.parent, agent="lukeb23")
+    context = AgentContext()
+    agent.populate_context_post_run(context)
+    saved = Trajectory.model_validate_json(path.read_text())
+    assert saved.agent.name == "lukeb23"
+    assert context.n_input_tokens == 300
+
+
 def test_absent_or_unrelated_logs_do_not_invent_a_trajectory(tmp_path: Path) -> None:
     path = tmp_path / "events.jsonl"
     assert convert_events(path) is None

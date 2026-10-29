@@ -115,6 +115,7 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
             "EXAMPLE_API_KEY": "explicit-override",
             "OTHER_SETTING": "preserved",
             "AGENTS590_LOG_DIR": "/logs/agent",
+            "AGENTS590_ATIF_PATH": "/logs/agent/trajectory.json",
         }
         assert cwd == "/app"
         return ExecResult(return_code=0, stdout="agent result\n", stderr="")

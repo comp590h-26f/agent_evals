@@ -105,6 +105,7 @@ class LocalCliAgent(BaseInstalledAgent):
             }
         env.update(self.extra_env)
         env["AGENTS590_LOG_DIR"] = str(self.environment_logs_dir)
+        env["AGENTS590_ATIF_PATH"] = str(self.environment_logs_dir / "trajectory.json")
         result = await self.exec_as_agent(
             environment,
             command=shlex.join(command),
@@ -132,17 +133,22 @@ class LocalCliAgent(BaseInstalledAgent):
     def populate_context_post_run(self, context: AgentContext) -> None:
         """Export the trajectory after Harbor retrieves even a failed run's logs."""
         context.metadata = {"agent": self.options.agent}
+        trajectory_path = self.logs_dir / "trajectory.json"
         try:
-            trajectory = self.convert_trajectory(self.logs_dir)
-        except (ValueError, KeyError, TypeError, OSError) as error:
-            self.logger.warning("Unable to convert agent event journal: %s", error)
-            return
-        if trajectory is None:
-            return
-        temporary = self.logs_dir / "trajectory.tmp"
-        temporary.write_text(json.dumps(trajectory.to_json_dict(), indent=2) + "\n")
-        temporary.replace(self.logs_dir / "trajectory.json")
+            trajectory = Trajectory.model_validate_json(trajectory_path.read_text())
+        except (OSError, UnicodeError, ValueError):
+            try:
+                trajectory = self.convert_trajectory(self.logs_dir)
+            except (ValueError, KeyError, TypeError, OSError) as error:
+                self.logger.warning("Unable to convert agent event journal: %s", error)
+                return
+            if trajectory is None:
+                return
+            temporary = self.logs_dir / "trajectory.tmp"
+            temporary.write_text(json.dumps(trajectory.to_json_dict(), indent=2) + "\n")
+            temporary.replace(trajectory_path)
         if trajectory.final_metrics is not None:
             context.n_input_tokens = trajectory.final_metrics.total_prompt_tokens
             context.n_output_tokens = trajectory.final_metrics.total_completion_tokens
             context.n_cache_tokens = trajectory.final_metrics.total_cached_tokens
+            context.cost_usd = trajectory.final_metrics.total_cost_usd

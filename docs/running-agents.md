@@ -76,9 +76,12 @@ command running while you browse; press Ctrl+C to stop it.
 
 The local CLI adapter sets `AGENTS590_LOG_DIR` to the sandbox agent log directory.
 Agents using `agents590.run_log.RunLog` (including `lukeb23`) write `events.jsonl`.
-After Harbor collects those logs, the adapter writes `agent/trajectory.json` and
-populates input, cached, and output token totals from reported usage. No cost is
-estimated. The **Trajectory** tab shows model text, tool arguments/results, and
+The adapter also sets `AGENTS590_ATIF_PATH` to `/logs/agent/trajectory.json` for
+agents that write ATIF directly. After Harbor collects the logs, the adapter uses
+an existing valid ATIF trajectory or converts the event journal when needed, then
+populates input, cached, and output token totals from reported usage. Reported
+ATIF costs are preserved; journal conversion does not estimate cost.
+The **Trajectory** tab shows model text, tool arguments/results, and
 custom notes. The **Agent** tab provides the raw journal and, on successful CLI
 exit, captured stdout/stderr. Failed runs retain their event journal and error
 entries; the trial exception contains the process failure.
@@ -96,8 +99,8 @@ entry in the trajectory. The logger redacts the configured API key and omits
 encrypted reasoning. Strings over 20,000 characters are marked as truncated in
 logs; the model's conversation is unchanged.
 
-Agents that do not emit the journal continue to work with stdout/stderr capture,
-but have no detailed trajectory. Old jobs without journals cannot be backfilled.
+Agents that emit neither ATIF nor the journal continue to work with stdout/stderr
+capture, but have no detailed trajectory. Old jobs without journals cannot be backfilled.
 The adapter also implements Harbor's journal converter for optional `--stream`
 live previews on supported environments. Completed-run inspection needs no
 streaming or extra configuration.
