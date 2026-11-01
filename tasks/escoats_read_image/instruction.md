@@ -1,1 +1,1 @@
-Read the number in `/app/number.png` and write it to `/app/answer.txt`. 
+Read the number in `/app/number.png` and write it to `/app/answer.txt`. Do not include a newline after the answer.
