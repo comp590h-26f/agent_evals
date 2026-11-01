@@ -1,0 +1,1 @@
+Read the number in `/app/number.png` and write it to `/app/answer.txt`. 
