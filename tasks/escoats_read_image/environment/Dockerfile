@@ -1,6 +1,6 @@
-FROM ubuntu:24.04
+FROM python:3.12-slim-bookworm
 
-# Install or copy over any environment dependencies here.
+RUN python -m pip install --no-cache-dir pytest==9.1.1
 
 WORKDIR /app
 COPY number.png /app/number.png
