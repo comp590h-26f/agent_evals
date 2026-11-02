@@ -24,7 +24,7 @@ def xor_with_key(data: bytes, key: str) -> bytes:
     while len(stream) < len(data):
         stream += hashlib.sha256(f"{key}:{counter}".encode()).digest()
         counter += 1
-    return bytes(a ^ b for a, b in zip(data, stream))
+    return bytes(a ^ b for a, b in zip(data, stream, strict=False))
 
 
 def main() -> int:
