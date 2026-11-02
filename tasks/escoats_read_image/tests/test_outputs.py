@@ -10,4 +10,4 @@ from pathlib import Path
 
 def test_answer():
     """Test that the answer contains the number shown in the image."""
-    assert Path("/app/answer.txt").read_text() == "590"
+    assert Path("/app/answer.txt").read_text().strip() == "590"
