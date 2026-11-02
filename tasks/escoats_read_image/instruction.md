@@ -1,1 +1,1 @@
-Read the number in `/app/number.png` and write it to `/app/answer.txt`. Do not include a newline after the answer.
+The screenshot `/app/number.png` contains a three-digit number. Write that number to `/app/answer.txt`.
