@@ -1,6 +1,7 @@
 """Check local packaging, CLI forwarding, and credential handling without Docker."""
 
 import asyncio
+import json
 import shlex
 from pathlib import Path
 from typing import cast
@@ -111,7 +112,11 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
     ) -> ExecResult:
         seen.append(shlex.split(command))
         assert "explicit-override" not in command
-        assert env == {"EXAMPLE_API_KEY": "explicit-override", "OTHER_SETTING": "preserved"}
+        assert env == {
+            "EXAMPLE_API_KEY": "explicit-override",
+            "OTHER_SETTING": "preserved",
+            "AGENTS590_TRAJECTORY_PATH": "/logs/agent/trajectory.json",
+        }
         assert cwd == "/app"
         return ExecResult(return_code=0, stdout="agent result\n", stderr="")
 
@@ -131,7 +136,37 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
         ]
     ]
     assert (agent.logs_dir / "stdout.txt").read_text() == "agent result\n"
-    assert context.metadata == {"agent": "another-agent"}
+    assert context.is_empty()
+
+
+def _trajectory(*usages: tuple[int, int]) -> str:
+    steps: list[dict[str, object]] = [{"step_id": 1, "source": "user", "message": "go"}]
+    steps += [
+        {
+            "step_id": index,
+            "source": "agent",
+            "message": "",
+            "metrics": {"prompt_tokens": prompt, "completion_tokens": completion},
+        }
+        for index, (prompt, completion) in enumerate(usages, start=2)
+    ]
+    agent = {"name": "morty", "version": "0.1.0", "model_name": "deployment"}
+    return json.dumps({"schema_version": "ATIF-v1.8", "agent": agent, "steps": steps})
+
+
+def test_post_run_reports_tokens_from_the_trajectory(tmp_path: Path) -> None:
+    (tmp_path / "trajectory.json").write_text(_trajectory((30, 7), (10, 2)))
+    context = AgentContext()
+    LocalCliAgent(logs_dir=tmp_path, agent="morty").populate_context_post_run(context)
+    assert (context.n_input_tokens, context.n_output_tokens) == (40, 9)
+    assert context.metadata == {"agent": "morty"}
+
+
+def test_post_run_without_a_trajectory_reports_no_tokens(tmp_path: Path) -> None:
+    context = AgentContext()
+    LocalCliAgent(logs_dir=tmp_path, agent="krisj_echo").populate_context_post_run(context)
+    assert (context.n_input_tokens, context.n_output_tokens) == (None, None)
+    assert context.metadata == {"agent": "krisj_echo"}
 
 
 def test_missing_package_fails_before_environment_setup(tmp_path: Path) -> None:

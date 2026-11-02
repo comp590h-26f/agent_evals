@@ -74,10 +74,11 @@ command running while you browse; press Ctrl+C to stop it.
    trajectory is available. Harbor reads `agent/trajectory.json` in
    [ATIF format](https://docs.harborframework.com/agents/atif).
 
-The current local CLI adapter captures stdout/stderr but does **not** generate
-ATIF automatically. Until your agent/adapter produces that file, **No trajectory**
-is expected; use the **Agent** and **Verifier** tabs to investigate the run.
-Cost and token statistics likewise depend on what your agent records.
+The local CLI adapter passes every agent the path to write in
+`AGENTS590_TRAJECTORY_PATH` and reports token totals from the file it finds there.
+Morty writes it; for an agent that ignores the variable, **No trajectory** is expected,
+so use the **Agent** and **Verifier** tabs to investigate the run. Cost statistics are
+not recorded.
 
 The underlying data remains in `jobs/<job>/<trial>/`; the job and each trial
 have a `result.json`. Save any results you need before running `make clean`,

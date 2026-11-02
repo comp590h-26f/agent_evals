@@ -10,6 +10,8 @@ from harbor.agents.installed.base import BaseInstalledAgent
 from harbor.agents.options import InstalledAgentOptions
 from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
+from harbor.models.trial.paths import EnvironmentPaths
+from harbor.utils.trajectory_utils import load_model_usage_from_trajectory
 from pydantic import Field
 
 _INSTALL_DIR = "/installed-agent/agents590"
@@ -17,6 +19,7 @@ _SOURCE_DIR = f"{_INSTALL_DIR}/source"
 _VENV_DIR = f"{_INSTALL_DIR}/venv"
 _PYTHON = f"{_VENV_DIR}/bin/python"
 _UV_VERSION = "0.10.6"
+_TRAJECTORY_FILE = "trajectory.json"
 
 
 class LocalAgentOptions(InstalledAgentOptions):
@@ -100,6 +103,7 @@ class LocalCliAgent(BaseInstalledAgent):
                 key: value for key, value in dotenv_values(env_file).items() if value is not None
             }
         env.update(self.extra_env)
+        env["AGENTS590_TRAJECTORY_PATH"] = str(EnvironmentPaths.agent_dir / _TRAJECTORY_FILE)
         result = await self.exec_as_agent(
             environment,
             command=shlex.join(command),
@@ -109,4 +113,11 @@ class LocalCliAgent(BaseInstalledAgent):
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         (self.logs_dir / "stdout.txt").write_text(result.stdout or "")
         (self.logs_dir / "stderr.txt").write_text(result.stderr or "")
+
+    def populate_context_post_run(self, context: AgentContext) -> None:
+        """Harbor calls this only for an empty context, so `run` must leave it untouched."""
         context.metadata = {"agent": self.options.agent}
+        usage = load_model_usage_from_trajectory(self.logs_dir / _TRAJECTORY_FILE)
+        if usage:
+            context.n_input_tokens = sum(model.n_input_tokens for model in usage.values())
+            context.n_output_tokens = sum(model.n_output_tokens for model in usage.values())
