@@ -151,14 +151,14 @@ renaming Python variables while preserving dictionary keys and behavior.
 with the next unused version number. Browse [`tasks/`](tasks/) for the full
 collection; the runners discover additional tasks automatically.
 
-`tasks/yitsui_add-input-validation/` is Charlotte's input-validation task: add type
+`tasks/yitsui_add_input_validation/` is Charlotte's input-validation task: add type
 checks to `add()` while preserving valid addition. It accepts integers and
 floats, rejects booleans and other types with `TypeError`, and grades behavior
 with pytest. Validate it without model calls:
 
 ```sh
-make oracle TASKS=yitsui_add-input-validation
-make baseline TASKS=yitsui_add-input-validation
+make oracle TASKS=yitsui_add_input_validation
+make baseline TASKS=yitsui_add_input_validation
 ```
 
 Expect oracle reward **1** and baseline reward **0**. Without `TASKS`, these
