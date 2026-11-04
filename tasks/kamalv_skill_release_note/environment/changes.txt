@@ -1,0 +1,2 @@
+Fixed retry backoff calculation.
+Added validation for non-positive attempts.
