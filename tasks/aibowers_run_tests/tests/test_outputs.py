@@ -24,7 +24,6 @@ def reported_ids():
 
 
 # --- Reporting checks ---
-
 @pytest.mark.parametrize(("actual", "original"), PRESERVED_FILES)
 def test_source_and_test_files_are_unchanged(actual, original):
     assert actual.read_bytes() == original.read_bytes(), f"{actual.name} was modified"
