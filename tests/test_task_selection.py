@@ -27,7 +27,14 @@ def _task_names(config: JobConfig) -> set[str]:
         ("", None),
         ("krisj_fix_add", {"krisj_fix_add"}),
         ("krisj_fix_add lucasdmo_feature_merge", {"krisj_fix_add", "lucasdmo_feature_merge"}),
-        ("lucasdmo_*", {"lucasdmo_feature_merge", "lucasdmo_rebase_conflicts"}),
+        (
+            "lucasdmo_*",
+            {
+                "lucasdmo_feature_merge",
+                "lucasdmo_rebase_conflicts",
+                "lucasdmo_skill_release_notes",
+            },
+        ),
     ],
 )
 def test_make_targets_resolve_all_tasks_or_the_selected_subset(

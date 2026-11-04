@@ -1,0 +1,48 @@
+{
+  "product": "Acme Widget",
+  "version": "2.4.0",
+  "changes": [
+    {
+      "issue": 318,
+      "kind": "fixed",
+      "customer_visible": true,
+      "summary": "Prevented duplicate reminder emails after reconnecting an account."
+    },
+    {
+      "issue": 121,
+      "kind": "added",
+      "customer_visible": true,
+      "summary": "Added CSV export for filtered dashboard results."
+    },
+    {
+      "issue": 42,
+      "kind": "changed",
+      "customer_visible": false,
+      "summary": "Replaced the background job scheduler."
+    },
+    {
+      "issue": 207,
+      "kind": "added",
+      "customer_visible": true,
+      "summary": "Added keyboard shortcuts to move between dashboard tabs."
+    },
+    {
+      "issue": 19,
+      "kind": "fixed",
+      "customer_visible": true,
+      "summary": "Fixed the account menu being clipped at narrow window widths."
+    },
+    {
+      "issue": 88,
+      "kind": "changed",
+      "customer_visible": true,
+      "summary": "Updated project activity timestamps to use the viewer's local time zone."
+    },
+    {
+      "issue": 341,
+      "kind": "fixed",
+      "customer_visible": false,
+      "summary": "Reduced database lock contention during event cleanup."
+    }
+  ]
+}
