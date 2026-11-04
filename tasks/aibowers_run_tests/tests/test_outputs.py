@@ -2,12 +2,19 @@ import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 APP = Path("/app")
 REPORT = APP / "failing_tests.txt"
 EXPECTED_FAILURES = {
     "tests/test_calculator.py::test_add_positive_numbers",
     "tests/test_calculator.py::test_divide_with_zero_returns_zero",
 }
+ORIGINALS = Path(__file__).with_name("originals")
+PRESERVED_FILES = (
+    (APP / "calculator.py", ORIGINALS / "calculator.py"),
+    (APP / "tests" / "test_calculator.py", ORIGINALS / "test_calculator.py"),
+)
 
 
 def reported_ids():
@@ -17,6 +24,10 @@ def reported_ids():
 
 
 # --- Reporting checks ---
+
+@pytest.mark.parametrize(("actual", "original"), PRESERVED_FILES)
+def test_source_and_test_files_are_unchanged(actual, original):
+    assert actual.read_bytes() == original.read_bytes(), f"{actual.name} was modified"
 
 
 def test_report_contains_expected_failures():
