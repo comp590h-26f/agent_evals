@@ -1,0 +1,30 @@
+schema_version = "1.4"
+artifacts = []
+
+[metadata]
+category = "software-engineering"
+tags = ["skills", "python"]
+difficulty = "easy"
+
+[verifier]
+timeout_sec = 30.0
+collect = []
+
+[verifier.env]
+
+[agent]
+timeout_sec = 300.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 300.0
+os = "linux"
+cpus = 1
+memory_mb = 512
+storage_mb = 1024
+mcp_servers = []
+skills_dir = "/skills"
+
+[environment.env]
+
+[solution.env]

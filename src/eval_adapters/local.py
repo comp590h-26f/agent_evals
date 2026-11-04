@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from dotenv import dotenv_values
+from harbor.agents.capabilities import AgentCapabilities
 from harbor.agents.installed.base import BaseInstalledAgent
 from harbor.agents.options import InstalledAgentOptions
 from harbor.environments.base import BaseEnvironment
@@ -55,6 +56,8 @@ def stage_package(package_path: Path, destination: Path) -> None:
 class LocalCliAgent(BaseInstalledAgent):
     """A generic evaluation adapter; the sibling package owns all agent behavior."""
 
+    # The adapter only forwards the directory; an agent without skills earns 0, not an error.
+    capabilities = AgentCapabilities(skills=True)
     options_model = LocalAgentOptions
     options: LocalAgentOptions
 
@@ -104,6 +107,8 @@ class LocalCliAgent(BaseInstalledAgent):
             }
         env.update(self.extra_env)
         env["AGENTS590_TRAJECTORY_PATH"] = str(EnvironmentPaths.agent_dir / _TRAJECTORY_FILE)
+        if self.skills_dir is not None:
+            env["AGENTS590_SKILLS_DIR"] = self.skills_dir
         result = await self.exec_as_agent(
             environment,
             command=shlex.join(command),
