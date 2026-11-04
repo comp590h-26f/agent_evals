@@ -74,16 +74,36 @@ command running while you browse; press Ctrl+C to stop it.
    trajectory is available. Harbor reads `agent/trajectory.json` in
    [ATIF format](https://docs.harborframework.com/agents/atif).
 
-The local CLI adapter passes every agent the path to write in
-`AGENTS590_TRAJECTORY_PATH` and reports token totals from the file it finds there.
-Morty writes it; for an agent that ignores the variable, **No trajectory** is expected,
-so use the **Agent** and **Verifier** tabs to investigate the run. Cost statistics are
-not recorded.
+The local CLI adapter sets `AGENTS590_LOG_DIR` to the sandbox agent log directory.
+Agents using `agents590.run_log.RunLog` (including `lukeb23`) write `events.jsonl`.
+The adapter also sets `AGENTS590_ATIF_PATH` to `/logs/agent/trajectory.json` for
+agents that write ATIF directly. After Harbor collects the logs, the adapter uses
+an existing valid ATIF trajectory or converts the event journal when needed, then
+populates input, cached, and output token totals from reported usage. Reported
+ATIF costs are preserved; journal conversion does not estimate cost.
+The **Trajectory** tab shows model text, tool arguments/results, and
+custom notes. The **Agent** tab provides the raw journal and, on successful CLI
+exit, captured stdout/stderr. Failed runs retain their event journal and error
+entries; the trial exception contains the process failure.
 
-For a task that sets `skills_dir` in `task.toml`, the adapter also passes that sandbox
-path in `AGENTS590_SKILLS_DIR`. An agent that ignores the variable won't see the skills,
-so [zhiy_skill_rename](../tasks/zhiy_skill_rename/) should earn **0** until the agent
-supports them.
+Run Luke's two tasks and inspect their logs:
+
+```sh
+make agent AGENT=lukeb23 TASKS='lukeb23_*' ENV_FILE=../590_agents/.env
+uv run --locked harbor view jobs
+```
+
+Add a custom note inside the agent's `run()` with
+`run_log.note("Starting verification", check="syntax")`. It becomes a system
+entry in the trajectory. The logger redacts the configured API key and omits
+encrypted reasoning. Strings over 20,000 characters are marked as truncated in
+logs; the model's conversation is unchanged.
+
+Agents that emit neither ATIF nor the journal continue to work with stdout/stderr
+capture, but have no detailed trajectory. Old jobs without journals cannot be backfilled.
+The adapter also implements Harbor's journal converter for optional `--stream`
+live previews on supported environments. Completed-run inspection needs no
+streaming or extra configuration.
 
 The underlying data remains in `jobs/<job>/<trial>/`; the job and each trial
 have a `result.json`. Save any results you need before running `make clean`,
