@@ -1,0 +1,6 @@
+customer_id,first_name,last_name,email,balance,status
+1042,Maria,Lopez,Maria.Lopez@Example.com,12.50,active
+1007,Dev,Patel,dev.patel@example.com,0.00,active
+1100,Sam,O'Neil,SAM@ONEIL.IO,1300.05,closed
+1013,Ana,Kim,ana.kim@example.org,-4.20,active
+1021,Lee,Chen,LChen@Example.com,7.07,active
