@@ -1,0 +1,1 @@
+Create a new directory in `\app` with the slug calculator. Move `/app/calculator.py` into a this directory. 
