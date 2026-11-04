@@ -141,6 +141,25 @@ def test_run_quotes_instruction_and_forwards_model_and_environment(
     assert context.metadata == {"agent": "another-agent"}
 
 
+def test_run_forwards_the_task_skills_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    agent = LocalCliAgent(logs_dir=tmp_path, agent="another-agent", skills_dir="/skills")
+    assert agent.capabilities.skills
+    seen: list[dict[str, str]] = []
+
+    async def execute(
+        environment: BaseEnvironment, command: str, env: dict[str, str], cwd: str | None = None
+    ) -> ExecResult:
+        seen.append(env)
+        return ExecResult(return_code=0, stdout="", stderr="")
+
+    monkeypatch.setattr(agent, "exec_as_agent", execute)
+    environment = cast(BaseEnvironment, RecordingEnvironment())
+    asyncio.run(agent.run("go", environment, AgentContext()))
+    assert seen[0]["AGENTS590_SKILLS_DIR"] == "/skills"
+
+
 def test_missing_package_fails_before_environment_setup(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="package_path"):
         stage_package(tmp_path / "missing", tmp_path)
