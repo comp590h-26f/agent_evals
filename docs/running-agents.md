@@ -105,6 +105,11 @@ The adapter also implements Harbor's journal converter for optional `--stream`
 live previews on supported environments. Completed-run inspection needs no
 streaming or extra configuration.
 
+For a task that sets `skills_dir` in `task.toml`, the adapter also passes that sandbox
+path in `AGENTS590_SKILLS_DIR`. An agent that ignores the variable won't see the skills,
+so [zhiy_skill_rename](../tasks/zhiy_skill_rename/) should earn **0** until the agent
+supports them.
+
 The underlying data remains in `jobs/<job>/<trial>/`; the job and each trial
 have a `result.json`. Save any results you need before running `make clean`,
 which deletes `jobs/`.

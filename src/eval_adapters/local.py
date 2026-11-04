@@ -110,6 +110,8 @@ class LocalCliAgent(BaseInstalledAgent):
         env.update(self.extra_env)
         env["AGENTS590_LOG_DIR"] = str(self.environment_logs_dir)
         env["AGENTS590_ATIF_PATH"] = str(self.environment_logs_dir / "trajectory.json")
+        if self.skills_dir is not None:
+            env["AGENTS590_SKILLS_DIR"] = self.skills_dir
         result = await self.exec_as_agent(
             environment,
             command=shlex.join(command),
