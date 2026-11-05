@@ -6,13 +6,16 @@ article. The task instruction asks only for a one-paragraph summary and does not
 mention the skill or attribution. The original article includes a title and a
 synthetic source URL; no browsing is needed.
 
-The verifier has exactly four tests: file existence and nonempty content, exact
-attribution and spacing, one body paragraph, and topic coverage. Content checks
-ignore attribution lines, so an otherwise valid summary without attribution
-passes three tests and fails one. Reward is 1 only when all four tests pass.
+The verifier has five tests: source article preservation, file existence and
+nonempty content, exact attribution and spacing, one body paragraph, and topic
+coverage. It compares `/app/article.md` byte for byte with `tests/original_article.md`,
+a snapshot stored with the hidden tests. Content checks ignore attribution lines,
+so an otherwise valid summary without attribution and an unchanged source passes
+four tests and fails one. Reward is 1 only when all five tests pass.
 The host regressions in `tests/test_skill_article_summary.py` exercise valid,
 missing, incorrect, repeated, and misplaced attribution, paragraph formatting,
-off-topic content, and absent or empty output.
+off-topic content, absent or empty output, and valid summaries paired with
+unchanged, replaced, or missing source articles.
 
 ## Validation
 
@@ -26,7 +29,20 @@ make baseline TASKS=yewons_skill_article_summary
 make agent AGENT=yewons_servant TASKS=yewons_skill_article_summary ENV_FILE=../590_agents/.env
 ```
 
-Observed results on November 3, 2026:
+Source preservation validation on November 5, 2026, in a fresh Ubuntu WSL
+source snapshot:
+
+| Validation | Result |
+| --- | --- |
+| `make check` | Passed Ruff lint, formatting, and Pyright. |
+| `make test` | 52 passed, including 16 verifier regression cases. |
+| Task oracle | Reward 1; all five verifier tests passed; zero exceptions. |
+| Task baseline | Reward 0; source preservation passed and all four summary tests failed; zero exceptions. |
+
+Logs for these task runs are under `jobs/source-integrity-validation/` (ignored
+by Git).
+
+Earlier results on November 3, 2026, before the source preservation check:
 
 | Validation | Result |
 | --- | --- |

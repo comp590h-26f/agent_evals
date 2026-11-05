@@ -1,4 +1,4 @@
-"""Four independent checks for the saved article summary in the Harbor sandbox."""
+"""Check the saved summary and preserve the source article in the Harbor sandbox."""
 
 import re
 from pathlib import Path
@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 
 SUMMARY_PATH = Path("/app/summary.md")
+ARTICLE_PATH = Path("/app/article.md")
+ORIGINAL_ARTICLE_PATH = Path(__file__).with_name("original_article.md")
 ATTRIBUTION = "Source: Why Urban Trees Need Healthy Soil\nURL: https://example.org/urban-tree-soil"
 
 
@@ -21,6 +23,13 @@ def summary_body(summary_text):
     return "\n".join(
         line for line in summary_text.splitlines() if not re.match(r"^(Source|URL):", line)
     ).strip()
+
+
+def test_source_article_is_unchanged():
+    assert ARTICLE_PATH.is_file(), "Keep /app/article.md unchanged"
+    assert ARTICLE_PATH.read_bytes() == ORIGINAL_ARTICLE_PATH.read_bytes(), (
+        "Do not modify /app/article.md"
+    )
 
 
 def test_summary_exists_and_is_nonempty(summary_text):
