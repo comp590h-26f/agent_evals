@@ -63,7 +63,7 @@ def test_comparison_yaml_reaches_the_generic_adapter(tmp_path: Path) -> None:
     assert all(dataset.task_names is None for dataset in config.datasets)
     agents = [_agent(config, tmp_path) for config in config.agents]
     assert [agent.model_name for agent in agents] == [
-        "openai/gpt-5.6-luna",
+        "openai/gpt-6-luna",
         "openai/gpt-5.6-terra",
     ]
     assert all(agent.options.agent == "krisj_starter" for agent in agents)
@@ -89,6 +89,6 @@ def test_cli_agent_and_model_replace_yaml_agents(tmp_path: Path) -> None:
 def test_model_only_override_keeps_yaml_agents() -> None:
     config = _job_from_cli("--config", str(COMPARISON_CONFIG), "--model", "unused")
     assert [agent.model_name for agent in config.agents] == [
-        "openai/gpt-5.6-luna",
+        "openai/gpt-6-luna",
         "openai/gpt-5.6-terra",
     ]

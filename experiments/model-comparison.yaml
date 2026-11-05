@@ -11,7 +11,7 @@ datasets:
   - path: tasks
 agents:
   - import_path: eval_adapters.local:LocalCliAgent
-    model_name: openai/gpt-5.6-luna
+    model_name: openai/gpt-6-luna
     kwargs:
       agent: krisj_starter
       package_path: ../590_agents

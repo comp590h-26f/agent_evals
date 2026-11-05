@@ -5,6 +5,7 @@ import shlex
 import shutil
 from pathlib import Path, PurePosixPath
 from tempfile import TemporaryDirectory
+from typing import Any
 
 from dotenv import dotenv_values
 from harbor.agents.installed.base import BaseInstalledAgent
@@ -53,11 +54,64 @@ def stage_package(package_path: Path, destination: Path) -> None:
     )
 
 
+def build_trajectory(
+    instruction: str, turns: list[dict[str, Any]], model: str | None
+) -> dict[str, Any]:
+    """Convert agent TRACE turns into an ATIF trajectory for Harbor's Trajectory and Tokens UI."""
+    steps: list[dict[str, Any]] = [{"step_id": 1, "source": "user", "message": instruction}]
+    for step_id, turn in enumerate(turns, start=2):
+        ids = [f"call_{step_id}_{n}" for n in range(len(turn["commands"]))]
+        step: dict[str, Any] = {"step_id": step_id, "source": "agent", "message": turn["text"]}
+        step["metrics"] = dict(
+            zip(
+                ("prompt_tokens", "cached_tokens", "completion_tokens"), turn["tokens"], strict=True
+            )
+        )
+        if turn["commands"]:
+            pairs = list(zip(ids, turn["commands"], strict=True))
+            step["tool_calls"] = [
+                {"tool_call_id": i, "function_name": "shell", "arguments": {"command": c}}
+                for i, (c, _) in pairs
+            ]
+            step["observation"] = {
+                "results": [{"source_call_id": i, "content": out} for i, (_, out) in pairs]
+            }
+        steps.append(step)
+    totals = [sum(column) for column in zip(*(t["tokens"] for t in turns), strict=True)]
+    return {
+        "schema_version": "ATIF-v1.8",
+        "agent": {"name": "local-cli-agent", "version": "1", "model_name": model},
+        "steps": steps,
+        "final_metrics": {
+            "total_prompt_tokens": totals[0],
+            "total_cached_tokens": totals[1],
+            "total_completion_tokens": totals[2],
+            "total_steps": len(steps),
+        },
+    }
+
+
+def trace_trajectory(instruction: str, output: str, model: str | None) -> Trajectory | None:
+    """Build a trajectory from TRACE lines, skipping records that are not valid logs."""
+    turns: list[dict[str, Any]] = []
+    for line in output.splitlines():
+        if not line.startswith("TRACE "):
+            continue
+        try:
+            turn = json.loads(line.removeprefix("TRACE "))
+            Trajectory.model_validate(build_trajectory(instruction, [turn], model))
+        except (ValueError, KeyError, TypeError):
+            continue
+        turns.append(turn)
+    return Trajectory.model_validate(build_trajectory(instruction, turns, model)) if turns else None
+
+
 class LocalCliAgent(BaseInstalledAgent):
     """A generic evaluation adapter; the sibling package owns all agent behavior."""
 
     options_model = LocalAgentOptions
     options: LocalAgentOptions
+    _trace: Trajectory | None = None
 
     @staticmethod
     def name() -> str:
@@ -113,8 +167,11 @@ class LocalCliAgent(BaseInstalledAgent):
             cwd=environment.task_env_config.workdir,
         )
         self.logs_dir.mkdir(parents=True, exist_ok=True)
-        (self.logs_dir / "stdout.txt").write_text(result.stdout or "")
-        (self.logs_dir / "stderr.txt").write_text(result.stderr or "")
+        (self.logs_dir / "stdout.txt").write_text(result.stdout or "", encoding="utf-8")
+        (self.logs_dir / "stderr.txt").write_text(result.stderr or "", encoding="utf-8")
+        # Docker exec may merge stderr into stdout
+        output = f"{result.stdout or ''}\n{result.stderr or ''}"
+        self._trace = trace_trajectory(instruction, output, self.model_name)
         # Leave context empty so Harbor calls populate_context_post_run after
         # downloading the journal, including when the CLI fails or times out.
 
@@ -138,7 +195,7 @@ class LocalCliAgent(BaseInstalledAgent):
             trajectory = Trajectory.model_validate_json(trajectory_path.read_text())
         except (OSError, UnicodeError, ValueError):
             try:
-                trajectory = self.convert_trajectory(self.logs_dir)
+                trajectory = self.convert_trajectory(self.logs_dir) or self._trace
             except (ValueError, KeyError, TypeError, OSError) as error:
                 self.logger.warning("Unable to convert agent event journal: %s", error)
                 return
