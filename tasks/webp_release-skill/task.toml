@@ -1,0 +1,31 @@
+schema_version = "1.4"
+artifacts = []
+
+[task]
+name = "COMP590H/release-skill"
+version = "1.0.0"
+description = "Cut a release using a team process that only an agent skill documents; the skill must come with the agent."
+authors = []
+keywords = ["skills", "git"]
+
+[metadata]
+author_name = "Jayden Webb"
+
+[verifier]
+timeout_sec = 120.0
+collect = []
+
+[verifier.env]
+
+[agent]
+timeout_sec = 600.0
+
+[environment]
+network_mode = "public"
+build_timeout_sec = 600.0
+os = "linux"
+mcp_servers = []
+
+[environment.env]
+
+[solution.env]

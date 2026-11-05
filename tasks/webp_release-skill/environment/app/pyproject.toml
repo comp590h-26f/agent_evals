@@ -1,0 +1,5 @@
+[project]
+name = "tally"
+version = "1.2.0"
+description = "Count words in text."
+requires-python = ">=3.12"
