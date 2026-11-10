@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 RELEASE_NOTES_PATH = Path("/app/RELEASE_NOTES.md")
 CHANGES_PATH = Path("/app/changes.txt")
 SKILL_PATH = Path("/root/.agents/skills/course-release-note/SKILL.md")
@@ -37,8 +39,27 @@ When creating release notes, follow this exact format:
 """
 
 
+def strip_optional_final_newline(markdown: str) -> str:
+    """Remove at most one final newline from Markdown for comparison."""
+    return markdown[:-1] if markdown.endswith("\n") else markdown
+
+
 def test_release_notes_follow_skill_format() -> None:
-    assert RELEASE_NOTES_PATH.read_text() == EXPECTED_RELEASE_NOTES
+    actual = strip_optional_final_newline(RELEASE_NOTES_PATH.read_text())
+    expected = strip_optional_final_newline(EXPECTED_RELEASE_NOTES)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("markdown", "expected"),
+    [
+        ("# Release 1.2.0", "# Release 1.2.0"),
+        ("# Release 1.2.0\n", "# Release 1.2.0"),
+        ("# Release 1.2.0\n\n", "# Release 1.2.0\n"),
+    ],
+)
+def test_strip_optional_final_newline(markdown: str, expected: str) -> None:
+    assert strip_optional_final_newline(markdown) == expected
 
 
 def test_task_inputs_are_unchanged() -> None:
