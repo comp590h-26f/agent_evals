@@ -1,0 +1,1 @@
+Read `/app/project-note.txt` and create `/app/dev-tools.txt` listing the project's current development tools.

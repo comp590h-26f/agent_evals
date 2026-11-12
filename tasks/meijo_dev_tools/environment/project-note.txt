@@ -1,0 +1,4 @@
+We use Ruff for linting and pytest for tests.
+Pyright checks Python types. Ruff also checks import order.
+We used Black before, but it is no longer part of this project.
+In the future, we might use Docker.
